@@ -8,6 +8,9 @@
 #include <SFML/Graphics.hpp>
 #include <math.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #define MAX 100
 #define SIZE_TABLERO 64
@@ -32,26 +35,6 @@ TipoProceso quienSoy;
 char
 tablero[SIZE_TABLERO];
 
-float
-posicionesTrenRojo[6][2]
-{
-    {2.f,2.f},
-    {2.f,3.f},
-    {2.f,4.f},
-    {2.f,5.f},
-    {2.f,6.f},
-    {2.f,7.f}
-},
-
-posicionesTrenAzul[4][2]
-{
-    {4.f,2.f},
-    {5.f,2.f},
-    {6.f,2.f},
-    {7.f,2.f}
-
-};
-
 bool
 finalizadoRojo = false,
 finalizadoAzul = false;
@@ -65,13 +48,18 @@ sf::Vector2f BoardToWindows(sf::Vector2f _position)
 
 
 //Se mueve el tren Rojo
-void TrenRojo() {}
+void TrenRojo(float *posicionesTrenRojo) {}
 
 //Se mueve el tren Azul
-void TrenAzul() {}
+void TrenAzul(float *posicionesTrenAzul)
+{
+
+
+
+}
 
 //Pintamos por pantalla
-void DibujarTrenes()
+void DibujarTrenes(float *posicionesTrenAzul, float *posicionesTrenRojo)
 {
     sf::Vector2f casillaOrigen, casillaDestino;
     bool casillaMarcada=false;
@@ -121,7 +109,7 @@ void DibujarTrenes()
         for(int i = 0; i < 4; i++)
         {
 
-            sf::Vector2f posicionTrenAzul(posicionesTrenAzul[i][0],posicionesTrenAzul[i][1]);
+            sf::Vector2f posicionTrenAzul(posicionesTrenAzul[i], 2);
             posicionTrenAzul = BoardToWindows(posicionTrenAzul);
             trenAzul.setPosition(posicionTrenAzul);
             window.draw(trenAzul);
@@ -135,7 +123,7 @@ void DibujarTrenes()
         for(int i = 0; i < 6; i++)
         {
 
-            sf::Vector2f posicionTrenRojo(posicionesTrenRojo[i][0],posicionesTrenRojo[i][1]);
+            sf::Vector2f posicionTrenRojo(2, posicionesTrenRojo[i]);
             posicionTrenRojo = BoardToWindows(posicionTrenRojo);
             trenRojo.setPosition(posicionTrenRojo);
             window.draw(trenRojo);
@@ -149,9 +137,28 @@ void DibujarTrenes()
 
 int main()
 {
+
     quienSoy = TipoProceso::PADRE;
 
     //TODO reservar memoria compartida
+
+    int idSharedMemoryTrenRojo = shmget(IPC_PRIVATE, 6*sizeof(float), IPC_CREAT|0666);
+    int idSharedMemoryTrenAzul = shmget(IPC_PRIVATE, 4*sizeof(float), IPC_CREAT|0666);
+
+    float *posicionesTrenRojo = (float*)shmat(idSharedMemoryTrenRojo,NULL, 0);
+    float *posicionesTrenAzul = (float*)shmat(idSharedMemoryTrenAzul,NULL, 0);
+
+    posicionesTrenRojo[0] = 7;
+    posicionesTrenRojo[1] = 6;
+    posicionesTrenRojo[2] = 5;
+    posicionesTrenRojo[3] = 4;
+    posicionesTrenRojo[4] = 3;
+    posicionesTrenRojo[5] = 2;
+
+    posicionesTrenAzul[0] = 4;
+    posicionesTrenAzul[1] = 5;
+    posicionesTrenAzul[2] = 6;
+    posicionesTrenAzul[3] = 7;
 
     //TODO Inicializar semaforos
 
@@ -162,8 +169,7 @@ int main()
     if(pidTrenAzul == 0)
     {
         quienSoy = TipoProceso::AZUL;
-        std::cout << "Soy el tren azul con id " << getpid() << std::endl;
-        TrenAzul();
+        TrenAzul(posicionesTrenAzul);
     }
 
     else
@@ -174,8 +180,7 @@ int main()
         if(pidTrenRojo == 0)
         {
             quienSoy = TipoProceso::ROJO;
-            std::cout << "Soy el tren rojo con id "<< getpid() << std::endl;
-            TrenRojo();
+            TrenRojo(posicionesTrenRojo);
 
         }
     }
@@ -183,9 +188,9 @@ int main()
     //Padre
     if(quienSoy == TipoProceso::PADRE)
     {
-        std::cout << "Soy el padre con id: " << getpid() << std::endl;
+
         //Pintar trenes
-        DibujarTrenes();
+        DibujarTrenes(posicionesTrenAzul, posicionesTrenRojo);
     }
     return 0;
 }
