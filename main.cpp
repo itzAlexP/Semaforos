@@ -21,8 +21,12 @@
 #define RADIO_AVATAR 25.f
 #define OFFSET_AVATAR 5
 
+pid_t
+pidTrenRojo,
+pidTrenAzul;
+
 enum
-TipoProceso{PADRE, ROJO, AZUL};
+TipoProceso {PADRE, ROJO, AZUL};
 TipoProceso quienSoy;
 
 char
@@ -48,16 +52,23 @@ posicionesTrenAzul[4][2]
 
 };
 
+bool
+finalizadoRojo = false,
+finalizadoAzul = false;
 
-/**
- * Si guardamos las posiciones de las piezas con valores del 0 al 7,
- * esta función las transforma a posición de ventana (pixel), que va del 0 al 512
- */
 
+//Transformar posiciones del 0 a 7 a pixeles de 0 a 512 para colocar las piezas.
 sf::Vector2f BoardToWindows(sf::Vector2f _position)
 {
     return sf::Vector2f(_position.x*LADO_CASILLA+OFFSET_AVATAR, _position.y*LADO_CASILLA+OFFSET_AVATAR);
 }
+
+
+//Se mueve el tren Rojo
+void TrenRojo() {}
+
+//Se mueve el tren Azul
+void TrenAzul() {}
 
 //Pintamos por pantalla
 void DibujarTrenes()
@@ -103,7 +114,7 @@ void DibujarTrenes()
             }
         }
 
-        //Pintamos tren azul
+        //Pintamos vagones tren azul
         sf::CircleShape trenAzul(RADIO_AVATAR);
         trenAzul.setFillColor(sf::Color::Blue);
 
@@ -117,7 +128,7 @@ void DibujarTrenes()
 
         }
 
-        //Pintamos tren rojo
+        //Pintamos vagones tren rojo
         sf::CircleShape trenRojo(RADIO_AVATAR);
         trenRojo.setFillColor(sf::Color::Red);
 
@@ -138,14 +149,43 @@ void DibujarTrenes()
 
 int main()
 {
-//TODO reservar memoria compartida
+    quienSoy = TipoProceso::PADRE;
 
-//TODO Inicializar semaforos
+    //TODO reservar memoria compartida
 
-//TODO Crear tren rojo y tren azul
+    //TODO Inicializar semaforos
 
+    //Creamos proceso tren rojo y tren azul
+    pidTrenAzul = fork();
 
- //Pintar trenes
-    DibujarTrenes();
+    //Tren azul
+    if(pidTrenAzul == 0)
+    {
+        quienSoy = TipoProceso::AZUL;
+        std::cout << "Soy el tren azul con id " << getpid() << std::endl;
+        TrenAzul();
+    }
+
+    else
+    {
+        pidTrenRojo = fork();
+
+        //Tren rojo
+        if(pidTrenRojo == 0)
+        {
+            quienSoy = TipoProceso::ROJO;
+            std::cout << "Soy el tren rojo con id "<< getpid() << std::endl;
+            TrenRojo();
+
+        }
+    }
+
+    //Padre
+    if(quienSoy == TipoProceso::PADRE)
+    {
+        std::cout << "Soy el padre con id: " << getpid() << std::endl;
+        //Pintar trenes
+        DibujarTrenes();
+    }
     return 0;
 }
