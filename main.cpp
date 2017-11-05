@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
 #define MAX 100
 #define SIZE_TABLERO 64
@@ -39,6 +40,16 @@ bool
 finalizadoRojo = false,
 finalizadoAzul = false;
 
+struct posicionesTrenes
+{
+
+    float posicionesTrenAzul[4];
+    float posicionesTrenRojo[6];
+
+
+};
+
+
 
 //Transformar posiciones del 0 a 7 a pixeles de 0 a 512 para colocar las piezas.
 sf::Vector2f BoardToWindows(sf::Vector2f _position)
@@ -46,18 +57,31 @@ sf::Vector2f BoardToWindows(sf::Vector2f _position)
     return sf::Vector2f(_position.x*LADO_CASILLA+OFFSET_AVATAR, _position.y*LADO_CASILLA+OFFSET_AVATAR);
 }
 
-
-//Se mueve el tren Rojo
-void TrenRojo(float* posicionesTrenRojo, int idSharedMemoryTrenRojo)
+void finalizadoTrenAzul(int param)
 {
+
+    finalizadoAzul = true;
+
+}
+
+void finalizadoTrenRojo(int param)
+{
+
+    finalizadoRojo = true;
+
+}
+//Se mueve el tren Rojo
+void TrenRojo(struct posicionesTrenes* posiciones)
+{
+
     int iteraciones = 0;
 
-    posicionesTrenRojo[0] = 2;
-    posicionesTrenRojo[1] = 3;
-    posicionesTrenRojo[2] = 4;
-    posicionesTrenRojo[3] = 5;
-    posicionesTrenRojo[4] = 6;
-    posicionesTrenRojo[5] = 7;
+    posiciones -> posicionesTrenRojo[0] = 2;
+    posiciones -> posicionesTrenRojo[1] = 3;
+    posiciones -> posicionesTrenRojo[2] = 4;
+    posiciones -> posicionesTrenRojo[3] = 5;
+    posiciones -> posicionesTrenRojo[4] = 6;
+    posiciones -> posicionesTrenRojo[5] = 7;
 
     bool finalizado = false;
 
@@ -67,11 +91,11 @@ void TrenRojo(float* posicionesTrenRojo, int idSharedMemoryTrenRojo)
         for(int i = 0; i < 7; i++)
         {
 
-            if(iteraciones == 19 && posicionesTrenRojo[i] <= 0)
+            if(iteraciones == 19 && posiciones -> posicionesTrenRojo[i] <= 0)
             {
-                posicionesTrenRojo[i] = -1;
+                posiciones -> posicionesTrenRojo[i] = -1;
 
-                if(posicionesTrenRojo[5] == -1)
+                if(posiciones -> posicionesTrenRojo[5] == -1)
                 {
                     finalizado = true;
                 }
@@ -79,16 +103,16 @@ void TrenRojo(float* posicionesTrenRojo, int idSharedMemoryTrenRojo)
             }
             else
             {
-                if(posicionesTrenRojo[i] - 1 >= 0)
+                if(posiciones -> posicionesTrenRojo[i] - 1 >= 0)
                 {
-                    posicionesTrenRojo[i] -= 1;
+                    posiciones -> posicionesTrenRojo[i] -= 1;
 
 
                 }
                 else
                 {
-                    posicionesTrenRojo[i] = 7;
-                    if(posicionesTrenRojo[5] == 7 && i == 5)
+                    posiciones -> posicionesTrenRojo[i] = 7;
+                    if(posiciones -> posicionesTrenRojo[5] == 7 && i == 5)
                     {
                         iteraciones++;
 
@@ -101,21 +125,21 @@ void TrenRojo(float* posicionesTrenRojo, int idSharedMemoryTrenRojo)
         sleep(2);
 
     }
-    shmdt(posicionesTrenRojo);
-    shmctl(idSharedMemoryTrenRojo, IPC_RMID, NULL);
+    shmdt(posiciones);
+    kill(getppid(), SIGUSR2);
 
 
 }
 
 //Se mueve el tren Azul
-void TrenAzul(float *posicionesTrenAzul, int sharedMemoryTrenAzul)
+void TrenAzul(struct posicionesTrenes* posiciones)
 {
     int iteraciones = 0;
 
-    posicionesTrenAzul[0] = 4;
-    posicionesTrenAzul[1] = 5;
-    posicionesTrenAzul[2] = 6;
-    posicionesTrenAzul[3] = 7;
+    posiciones -> posicionesTrenAzul[0] = 1;
+    posiciones -> posicionesTrenAzul[1] = 2;
+    posiciones -> posicionesTrenAzul[2] = 3;
+    posiciones -> posicionesTrenAzul[3] = 4;
 
     bool finalizado = false;
 
@@ -125,11 +149,11 @@ void TrenAzul(float *posicionesTrenAzul, int sharedMemoryTrenAzul)
         for(int i = 0; i < 5; i++)
         {
 
-            if(iteraciones == 19 && posicionesTrenAzul[i] <= 0)
+            if(iteraciones == 19 && posiciones -> posicionesTrenAzul[i] <= 0)
             {
-                posicionesTrenAzul[i] = -1;
+                posiciones -> posicionesTrenAzul[i] = -1;
 
-                if(posicionesTrenAzul[3] == -1)
+                if(posiciones -> posicionesTrenAzul[3] == -1)
                 {
                     finalizado = true;
                 }
@@ -137,16 +161,16 @@ void TrenAzul(float *posicionesTrenAzul, int sharedMemoryTrenAzul)
             }
             else
             {
-                if(posicionesTrenAzul[i] - 1 >= 0)
+                if(posiciones -> posicionesTrenAzul[i] - 1 >= 0)
                 {
-                    posicionesTrenAzul[i] -= 1;
+                    posiciones -> posicionesTrenAzul[i] -= 1;
 
 
                 }
                 else
                 {
-                    posicionesTrenAzul[i] = 7;
-                    if(posicionesTrenAzul[3] == 7 && i == 3)
+                    posiciones -> posicionesTrenAzul[i] = 7;
+                    if(posiciones -> posicionesTrenAzul[3] == 7 && i == 3)
                     {
                         iteraciones++;
 
@@ -159,19 +183,20 @@ void TrenAzul(float *posicionesTrenAzul, int sharedMemoryTrenAzul)
         sleep(1);
 
     }
-    shmdt(posicionesTrenAzul);
-    shmctl(sharedMemoryTrenAzul, IPC_RMID, NULL);
+
+    shmdt(posiciones);
+    kill(getppid(), SIGUSR1);
 
 }
 
 //Pintamos por pantalla
-void DibujarTrenes(float *posicionesTrenAzul, float *posicionesTrenRojo)
+void DibujarTrenes(struct posicionesTrenes* posiciones)
 {
     sf::Vector2f casillaOrigen, casillaDestino;
     bool casillaMarcada=false;
 
     sf::RenderWindow window(sf::VideoMode(512,512), "Carretera y manta");
-    while(window.isOpen())
+    while(window.isOpen() && !finalizadoRojo || !finalizadoAzul)
     {
         //Captura de eventos
         sf::Event event;
@@ -215,7 +240,7 @@ void DibujarTrenes(float *posicionesTrenAzul, float *posicionesTrenRojo)
         for(int i = 0; i < 4; i++)
         {
 
-            sf::Vector2f posicionTrenAzul(posicionesTrenAzul[i], 2);
+            sf::Vector2f posicionTrenAzul(posiciones->posicionesTrenAzul[i], 2.f);
             posicionTrenAzul = BoardToWindows(posicionTrenAzul);
             trenAzul.setPosition(posicionTrenAzul);
             window.draw(trenAzul);
@@ -229,7 +254,7 @@ void DibujarTrenes(float *posicionesTrenAzul, float *posicionesTrenRojo)
         for(int i = 0; i < 6; i++)
         {
 
-            sf::Vector2f posicionTrenRojo(2, posicionesTrenRojo[i]);
+            sf::Vector2f posicionTrenRojo(2.f, posiciones->posicionesTrenRojo[i]);
             posicionTrenRojo = BoardToWindows(posicionTrenRojo);
             trenRojo.setPosition(posicionTrenRojo);
             window.draw(trenRojo);
@@ -246,15 +271,13 @@ int main()
 
     quienSoy = TipoProceso::PADRE;
 
-    //TODO reservar memoria compartida
+    //Reservamos memoria compartida
+    int idSharedMemoryTrenes = shmget(IPC_PRIVATE, sizeof(struct posicionesTrenes), IPC_CREAT|0666);
+    struct posicionesTrenes* ptrSharedMemoryTrenes = (struct posicionesTrenes*) shmat(idSharedMemoryTrenes,NULL, 0);
 
-    int idSharedMemoryTrenRojo = shmget(IPC_PRIVATE, 6*sizeof(float), IPC_CREAT|0666);
-    int idSharedMemoryTrenAzul = shmget(IPC_PRIVATE, 4*sizeof(float), IPC_CREAT|0666);
-
-    float* posicionesTrenRojo = (float*)shmat(idSharedMemoryTrenRojo,NULL, 0);
-    float* posicionesTrenAzul = (float*)shmat(idSharedMemoryTrenAzul,NULL, 0);
 
     //TODO Inicializar semaforos
+    int semid = semget(IPC_PRIVATE, 1, IPC_CREAT|0600);
 
     //Creamos proceso tren rojo y tren azul
     pidTrenAzul = fork();
@@ -263,7 +286,7 @@ int main()
     if(pidTrenAzul == 0)
     {
         quienSoy = TipoProceso::AZUL;
-        TrenAzul(posicionesTrenAzul, idSharedMemoryTrenAzul);
+        TrenAzul(ptrSharedMemoryTrenes);
     }
 
     else
@@ -274,7 +297,7 @@ int main()
         if(pidTrenRojo == 0)
         {
             quienSoy = TipoProceso::ROJO;
-            TrenRojo(posicionesTrenRojo, idSharedMemoryTrenRojo);
+            TrenRojo(ptrSharedMemoryTrenes);
 
         }
     }
@@ -282,11 +305,16 @@ int main()
     //Padre
     if(quienSoy == TipoProceso::PADRE)
     {
+        //Configuramos signals
+        signal(SIGUSR1, finalizadoTrenAzul);
+        signal(SIGUSR2, finalizadoTrenRojo);
 
         //Pintar trenes
-        DibujarTrenes(posicionesTrenAzul, posicionesTrenRojo);
+        DibujarTrenes(ptrSharedMemoryTrenes);
+        shmdt(ptrSharedMemoryTrenes);
+        shmctl(ptrSharedMemoryTrenes, IPC_RMID, NULL);
+
     }
 
-    std::cout << "Me mato" << std::endl;
     return 0;
 }
