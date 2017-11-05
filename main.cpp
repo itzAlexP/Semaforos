@@ -48,7 +48,7 @@ sf::Vector2f BoardToWindows(sf::Vector2f _position)
 
 
 //Se mueve el tren Rojo
-void TrenRojo(float* posicionesTrenRojo)
+void TrenRojo(float* posicionesTrenRojo, int idSharedMemoryTrenRojo)
 {
     int iteraciones = 0;
 
@@ -101,12 +101,14 @@ void TrenRojo(float* posicionesTrenRojo)
         sleep(2);
 
     }
+    shmdt(posicionesTrenRojo);
+    shmctl(idSharedMemoryTrenRojo, IPC_RMID, NULL);
 
 
 }
 
 //Se mueve el tren Azul
-void TrenAzul(float *posicionesTrenAzul)
+void TrenAzul(float *posicionesTrenAzul, int sharedMemoryTrenAzul)
 {
     int iteraciones = 0;
 
@@ -157,6 +159,8 @@ void TrenAzul(float *posicionesTrenAzul)
         sleep(1);
 
     }
+    shmdt(posicionesTrenAzul);
+    shmctl(sharedMemoryTrenAzul, IPC_RMID, NULL);
 
 }
 
@@ -259,7 +263,7 @@ int main()
     if(pidTrenAzul == 0)
     {
         quienSoy = TipoProceso::AZUL;
-        TrenAzul(posicionesTrenAzul);
+        TrenAzul(posicionesTrenAzul, idSharedMemoryTrenAzul);
     }
 
     else
@@ -270,7 +274,7 @@ int main()
         if(pidTrenRojo == 0)
         {
             quienSoy = TipoProceso::ROJO;
-            TrenRojo(posicionesTrenRojo);
+            TrenRojo(posicionesTrenRojo, idSharedMemoryTrenRojo);
 
         }
     }
@@ -282,5 +286,7 @@ int main()
         //Pintar trenes
         DibujarTrenes(posicionesTrenAzul, posicionesTrenRojo);
     }
+
+    std::cout << "Me mato" << std::endl;
     return 0;
 }
