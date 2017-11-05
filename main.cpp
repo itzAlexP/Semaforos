@@ -48,13 +48,115 @@ sf::Vector2f BoardToWindows(sf::Vector2f _position)
 
 
 //Se mueve el tren Rojo
-void TrenRojo(float *posicionesTrenRojo) {}
+void TrenRojo(float* posicionesTrenRojo)
+{
+    int iteraciones = 0;
+
+    posicionesTrenRojo[0] = 2;
+    posicionesTrenRojo[1] = 3;
+    posicionesTrenRojo[2] = 4;
+    posicionesTrenRojo[3] = 5;
+    posicionesTrenRojo[4] = 6;
+    posicionesTrenRojo[5] = 7;
+
+    bool finalizado = false;
+
+    while(!finalizado)
+    {
+
+        for(int i = 0; i < 7; i++)
+        {
+
+            if(iteraciones == 19 && posicionesTrenRojo[i] <= 0)
+            {
+                posicionesTrenRojo[i] = -1;
+
+                if(posicionesTrenRojo[5] == -1)
+                {
+                    finalizado = true;
+                }
+
+            }
+            else
+            {
+                if(posicionesTrenRojo[i] - 1 >= 0)
+                {
+                    posicionesTrenRojo[i] -= 1;
+
+
+                }
+                else
+                {
+                    posicionesTrenRojo[i] = 7;
+                    if(posicionesTrenRojo[5] == 7 && i == 5)
+                    {
+                        iteraciones++;
+
+                    }
+                }
+            }
+
+
+        }
+        sleep(2);
+
+    }
+
+
+}
 
 //Se mueve el tren Azul
 void TrenAzul(float *posicionesTrenAzul)
 {
+    int iteraciones = 0;
+
+    posicionesTrenAzul[0] = 4;
+    posicionesTrenAzul[1] = 5;
+    posicionesTrenAzul[2] = 6;
+    posicionesTrenAzul[3] = 7;
+
+    bool finalizado = false;
+
+    while(!finalizado)
+    {
+
+        for(int i = 0; i < 5; i++)
+        {
+
+            if(iteraciones == 19 && posicionesTrenAzul[i] <= 0)
+            {
+                posicionesTrenAzul[i] = -1;
+
+                if(posicionesTrenAzul[3] == -1)
+                {
+                    finalizado = true;
+                }
+
+            }
+            else
+            {
+                if(posicionesTrenAzul[i] - 1 >= 0)
+                {
+                    posicionesTrenAzul[i] -= 1;
 
 
+                }
+                else
+                {
+                    posicionesTrenAzul[i] = 7;
+                    if(posicionesTrenAzul[3] == 7 && i == 3)
+                    {
+                        iteraciones++;
+
+                    }
+                }
+            }
+
+
+        }
+        sleep(1);
+
+    }
 
 }
 
@@ -145,20 +247,8 @@ int main()
     int idSharedMemoryTrenRojo = shmget(IPC_PRIVATE, 6*sizeof(float), IPC_CREAT|0666);
     int idSharedMemoryTrenAzul = shmget(IPC_PRIVATE, 4*sizeof(float), IPC_CREAT|0666);
 
-    float *posicionesTrenRojo = (float*)shmat(idSharedMemoryTrenRojo,NULL, 0);
-    float *posicionesTrenAzul = (float*)shmat(idSharedMemoryTrenAzul,NULL, 0);
-
-    posicionesTrenRojo[0] = 7;
-    posicionesTrenRojo[1] = 6;
-    posicionesTrenRojo[2] = 5;
-    posicionesTrenRojo[3] = 4;
-    posicionesTrenRojo[4] = 3;
-    posicionesTrenRojo[5] = 2;
-
-    posicionesTrenAzul[0] = 4;
-    posicionesTrenAzul[1] = 5;
-    posicionesTrenAzul[2] = 6;
-    posicionesTrenAzul[3] = 7;
+    float* posicionesTrenRojo = (float*)shmat(idSharedMemoryTrenRojo,NULL, 0);
+    float* posicionesTrenAzul = (float*)shmat(idSharedMemoryTrenAzul,NULL, 0);
 
     //TODO Inicializar semaforos
 
