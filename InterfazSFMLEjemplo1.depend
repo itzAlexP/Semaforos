@@ -795,7 +795,7 @@
 	<string>
 	<vector>
 
-1509900585 source:/home/aperez/Desktop/InterfazSFMLEjemplo1/main.cpp
+1509977507 source:/home/aperez/Desktop/InterfazSFMLEjemplo1/main.cpp
 	<stdlib.h>
 	<unistd.h>
 	<fcntl.h>
@@ -809,6 +809,7 @@
 	<sys/types.h>
 	<sys/ipc.h>
 	<sys/shm.h>
+	<sys/sem.h>
 
 1486768754 /home/aperez/Desktop/InterfazSFMLEjemplo1/SFML/include/SFML/Graphics.hpp
 	<SFML/Window.hpp>

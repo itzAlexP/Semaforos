@@ -42,11 +42,16 @@ finalizadoAzul = false;
 
 struct posicionesTrenes
 {
-
-    float posicionesTrenAzul[4];
     float posicionesTrenRojo[6];
+    float posicionesTrenAzul[4];
 
+};
 
+union semun {
+
+int val;
+struct semid_ds* buf;
+unsigned short* array;
 };
 
 
@@ -71,8 +76,11 @@ void finalizadoTrenRojo(int param)
 
 }
 //Se mueve el tren Rojo
-void TrenRojo(struct posicionesTrenes* posiciones)
+void TrenRojo(struct posicionesTrenes* posiciones, int semId)
 {
+    struct sembuf sb[1];
+    sb[0].sem_flg = SEM_UNDO;
+
 
     int iteraciones = 0;
 
@@ -85,15 +93,34 @@ void TrenRojo(struct posicionesTrenes* posiciones)
 
     bool finalizado = false;
 
+
+     for(int i = 0; i < 6; i ++){
+
+
+    std::cout << "Tren rojo: La posicion " << i << " contiene el valor: " << posiciones -> posicionesTrenRojo[i] << std::endl;
+
+    }
+
     while(!finalizado)
     {
 
-        for(int i = 0; i < 7; i++)
+         //Zona critica, activamos semaforo
+            if(posiciones -> posicionesTrenRojo[0] - 1 == 2){
+
+            sb[0].sem_num = 0;
+            sb[0].sem_op = -1;
+            semop(semId, sb, 1);
+            }
+
+        for(int i = 0; i < 6; i++)
         {
+
 
             if(iteraciones == 19 && posiciones -> posicionesTrenRojo[i] <= 0)
             {
                 posiciones -> posicionesTrenRojo[i] = -1;
+
+
 
                 if(posiciones -> posicionesTrenRojo[5] == -1)
                 {
@@ -122,6 +149,16 @@ void TrenRojo(struct posicionesTrenes* posiciones)
 
 
         }
+
+         //Salimos de la zona de riesgo
+                if(posiciones -> posicionesTrenRojo[5] == 1){
+
+                sb[0].sem_num = 0;
+                sb[0].sem_op = 1;
+                semop(semId, sb, 1);
+
+                }
+
         sleep(2);
 
     }
@@ -132,8 +169,11 @@ void TrenRojo(struct posicionesTrenes* posiciones)
 }
 
 //Se mueve el tren Azul
-void TrenAzul(struct posicionesTrenes* posiciones)
+void TrenAzul(struct posicionesTrenes* posiciones, int semId)
 {
+    struct sembuf sb[1];
+    sb[0].sem_flg = SEM_UNDO;
+
     int iteraciones = 0;
 
     posiciones -> posicionesTrenAzul[0] = 1;
@@ -141,12 +181,27 @@ void TrenAzul(struct posicionesTrenes* posiciones)
     posiciones -> posicionesTrenAzul[2] = 3;
     posiciones -> posicionesTrenAzul[3] = 4;
 
+    for(int i = 0; i < 4; i ++){
+
+
+    std::cout << "Tren azul: La posicion " << i << " contiene el valor: " << posiciones -> posicionesTrenAzul[i] << std::endl;
+
+    }
+
     bool finalizado = false;
 
     while(!finalizado)
     {
 
-        for(int i = 0; i < 5; i++)
+          //Zona critica, activamos semaforo
+            if(posiciones -> posicionesTrenAzul[0] - 1 == 2){
+
+            sb[0].sem_num = 0;
+            sb[0].sem_op = -1;
+            semop(semId, sb, 1);
+            }
+
+        for(int i = 0; i < 4; i++)
         {
 
             if(iteraciones == 19 && posiciones -> posicionesTrenAzul[i] <= 0)
@@ -180,6 +235,15 @@ void TrenAzul(struct posicionesTrenes* posiciones)
 
 
         }
+
+         //Salimos zona critica
+                if(posiciones -> posicionesTrenRojo[3] == 1){
+
+                sb[0].sem_num = 0;
+                sb[0].sem_op = 1;
+                semop(semId, sb, 1);
+
+                }
         sleep(1);
 
     }
@@ -193,7 +257,6 @@ void TrenAzul(struct posicionesTrenes* posiciones)
 void DibujarTrenes(struct posicionesTrenes* posiciones)
 {
     sf::Vector2f casillaOrigen, casillaDestino;
-    bool casillaMarcada=false;
 
     sf::RenderWindow window(sf::VideoMode(512,512), "Carretera y manta");
     while(window.isOpen() && !finalizadoRojo || !finalizadoAzul)
@@ -277,7 +340,18 @@ int main()
 
 
     //TODO Inicializar semaforos
-    int semid = semget(IPC_PRIVATE, 1, IPC_CREAT|0600);
+    int semId = semget(IPC_PRIVATE, 1, IPC_CREAT|0600);
+
+    union semun arg;
+    arg.val = 1;
+    int okSem = semctl(semId, 0, SETVAL, arg);
+
+
+
+    //Falta union
+    //semctl(semid, 0 , SETVAL,);
+
+
 
     //Creamos proceso tren rojo y tren azul
     pidTrenAzul = fork();
@@ -286,7 +360,7 @@ int main()
     if(pidTrenAzul == 0)
     {
         quienSoy = TipoProceso::AZUL;
-        TrenAzul(ptrSharedMemoryTrenes);
+        TrenAzul(ptrSharedMemoryTrenes, semId);
     }
 
     else
@@ -297,7 +371,7 @@ int main()
         if(pidTrenRojo == 0)
         {
             quienSoy = TipoProceso::ROJO;
-            TrenRojo(ptrSharedMemoryTrenes);
+            TrenRojo(ptrSharedMemoryTrenes, semId);
 
         }
     }
