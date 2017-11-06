@@ -47,11 +47,12 @@ struct posicionesTrenes
 
 };
 
-union semun {
+union semun
+{
 
-int val;
-struct semid_ds* buf;
-unsigned short* array;
+    int val;
+    struct semid_ds* buf;
+    unsigned short* array;
 };
 
 
@@ -93,24 +94,17 @@ void TrenRojo(struct posicionesTrenes* posiciones, int semId)
 
     bool finalizado = false;
 
-
-     for(int i = 0; i < 6; i ++){
-
-
-    std::cout << "Tren rojo: La posicion " << i << " contiene el valor: " << posiciones -> posicionesTrenRojo[i] << std::endl;
-
-    }
-
     while(!finalizado)
     {
 
-         //Zona critica, activamos semaforo
-            if(posiciones -> posicionesTrenRojo[0] - 1 == 2){
+        //Zona critica, activamos semaforo
+        if(posiciones -> posicionesTrenRojo[0] == 2)
+        {
 
             sb[0].sem_num = 0;
             sb[0].sem_op = -1;
             semop(semId, sb, 1);
-            }
+        }
 
         for(int i = 0; i < 6; i++)
         {
@@ -150,14 +144,15 @@ void TrenRojo(struct posicionesTrenes* posiciones, int semId)
 
         }
 
-         //Salimos de la zona de riesgo
-                if(posiciones -> posicionesTrenRojo[5] == 1){
+        //Salimos de la zona de riesgo
+        if(posiciones -> posicionesTrenRojo[5] == 1)
+        {
 
-                sb[0].sem_num = 0;
-                sb[0].sem_op = 1;
-                semop(semId, sb, 1);
+            sb[0].sem_num = 0;
+            sb[0].sem_op = 1;
+            semop(semId, sb, 1);
 
-                }
+        }
 
         sleep(2);
 
@@ -176,30 +171,25 @@ void TrenAzul(struct posicionesTrenes* posiciones, int semId)
 
     int iteraciones = 0;
 
-    posiciones -> posicionesTrenAzul[0] = 1;
-    posiciones -> posicionesTrenAzul[1] = 2;
-    posiciones -> posicionesTrenAzul[2] = 3;
-    posiciones -> posicionesTrenAzul[3] = 4;
-
-    for(int i = 0; i < 4; i ++){
-
-
-    std::cout << "Tren azul: La posicion " << i << " contiene el valor: " << posiciones -> posicionesTrenAzul[i] << std::endl;
-
-    }
+    posiciones -> posicionesTrenAzul[0] = 4;
+    posiciones -> posicionesTrenAzul[1] = 5;
+    posiciones -> posicionesTrenAzul[2] = 6;
+    posiciones -> posicionesTrenAzul[3] = 7;
 
     bool finalizado = false;
 
     while(!finalizado)
     {
 
-          //Zona critica, activamos semaforo
-            if(posiciones -> posicionesTrenAzul[0] - 1 == 2){
+        //Zona critica, activamos semaforo
+        if(posiciones -> posicionesTrenAzul[0] - 1 == 2)
+        {
 
             sb[0].sem_num = 0;
             sb[0].sem_op = -1;
             semop(semId, sb, 1);
-            }
+        }
+
 
         for(int i = 0; i < 4; i++)
         {
@@ -236,14 +226,15 @@ void TrenAzul(struct posicionesTrenes* posiciones, int semId)
 
         }
 
-         //Salimos zona critica
-                if(posiciones -> posicionesTrenRojo[3] == 1){
+        //Salimos zona critica
+        if(posiciones -> posicionesTrenAzul[3] == 1)
+        {
 
-                sb[0].sem_num = 0;
-                sb[0].sem_op = 1;
-                semop(semId, sb, 1);
+            sb[0].sem_num = 0;
+            sb[0].sem_op = 1;
+            semop(semId, sb, 1);
 
-                }
+        }
         sleep(1);
 
     }
@@ -347,12 +338,6 @@ int main()
     int okSem = semctl(semId, 0, SETVAL, arg);
 
 
-
-    //Falta union
-    //semctl(semid, 0 , SETVAL,);
-
-
-
     //Creamos proceso tren rojo y tren azul
     pidTrenAzul = fork();
 
@@ -385,8 +370,12 @@ int main()
 
         //Pintar trenes
         DibujarTrenes(ptrSharedMemoryTrenes);
+
+        //Liberamos memoria y semaforos.
         shmdt(ptrSharedMemoryTrenes);
         shmctl(ptrSharedMemoryTrenes, IPC_RMID, NULL);
+        semctl(semId, 0, IPC_RMID, arg);
+
 
     }
 
